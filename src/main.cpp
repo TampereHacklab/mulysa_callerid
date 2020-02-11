@@ -28,7 +28,7 @@ TinyGsm modem(Serial1);
 #endif
 
 const char server[] = "my.tampere.hacklab.fi";
-const char resource[] = "/auth/phonenumber";
+const char resource[] = "/api/v1/auth/number";
 const int port = 443;
 
 TinyGsmClientSecure connection(modem);
@@ -156,16 +156,12 @@ String ListenForIncomingCall()
 void loop()
 {
   //loopBackDebug();
+  // TODO: check that the GPRS connection still active
   String number = ListenForIncomingCall();
   if (!number.isEmpty())
   {
     Serial.print("And we have a number: ");
     Serial.println(number);
-
-    if (modem.isGprsConnected())
-    {
-      Serial.println("GPRS connection is active, which is nice");
-    }
 
     // now ask from mulysa if this number is ok or not
     String payload = "{\"";
@@ -176,16 +172,19 @@ void loop()
     payload.concat(number);
     payload.concat("\"}");
 
-    Serial.println("Starting http request");
-    client.beginRequest();
+    Serial.println("Starting http request with payload: ");
+    Serial.print(payload);
+    client.connectionKeepAlive(); // this is required for some reason...
     client.post(resource, "application/json", payload);
-    client.endRequest();
 
-    if(client.responseStatusCode() == 200) {
-      Serial.println("Access granted");
-    } else {
-      Serial.println("Nope, no access");
-    }
+    int responseCode = client.responseStatusCode();
+    String responseBody = client.responseBody();
+    Serial.print("Status code: ");
+    Serial.println(responseCode);
+    Serial.print("Response body: ");
+    Serial.println(responseBody);
 
+
+    Serial.println("Ready for next call");
   }
 }
