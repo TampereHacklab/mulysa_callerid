@@ -175,8 +175,8 @@ void loop()
     Serial.println("Starting http request with payload: ");
     Serial.print(payload);
     client.connectionKeepAlive(); // this is required for some reason...
-//    client.post(resource, "application/json", payload);
-    client.get(resource);
+    client.post(resource, "application/json", payload);
+//    client.get(resource);
 
     int responseCode = client.responseStatusCode();
     String responseBody = client.responseBody();
