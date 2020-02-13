@@ -16,6 +16,9 @@ const char gprsPass[] = "";
 #define MODEM_TX 27
 #define MODEM_RX 26
 
+// trigger pin
+#define TRIGGER_PIN 22
+
 //#define DUMP_AT_COMMANDS
 
 // for debugging AT commands
@@ -28,7 +31,7 @@ TinyGsm modem(Serial1);
 #endif
 
 const char server[] = "my.tampere.hacklab.fi";
-const char resource[] = "/api/v1/auth/number";
+const char resource[] = "/api/v1/access/phone/";
 const int port = 443;
 
 TinyGsmClientSecure connection(modem);
@@ -56,6 +59,10 @@ void setup()
   digitalWrite(MODEM_RST, HIGH);
   digitalWrite(MODEM_POWER_ON, HIGH);
 
+  // trigger pin
+  pinMode(TRIGGER_PIN, OUTPUT);
+  digitalWrite(TRIGGER_PIN, LOW);
+
   // start serial for modem
   Serial1.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
   delay(500);
@@ -78,14 +85,19 @@ void setup()
       delay(1000);
     };
   }
-
-  // set ate1 for echo for easier debugging
-  Serial.println("Activating echo for modem serial comm.");
-  Serial1.println("ATE1");
+  // flush just in case
+  Serial1.flush();
 
   // set clip on so that we get the number
-  Serial.println("Activating clip to get caller number.");
-  Serial1.println("AT+CLIP=1");
+  Serial.println("Activating AT+CLIP=1 to get caller number.");
+  modem.sendAT(GF("+CLIP=1"));
+  modem.waitResponse(60000L);
+
+  // set type for clip number format
+  // TODO: this does not seem to work, we still get the number without the international format
+  Serial.println("Activating AT+CSTA=145 to get caller number in international format.");
+  modem.sendAT(GF("+CSTA=145"));
+  modem.waitResponse(60000L);
 
   // start gprs connection
   Serial.println("Starting GPRS connections. This might take a while...");
@@ -168,7 +180,7 @@ void loop()
     payload.concat("deviceid\":\"");
     payload.concat(chipId);
     payload.concat("\",\"");
-    payload.concat("number\":\"");
+    payload.concat("payload\":\"");
     payload.concat(number);
     payload.concat("\"}");
 
@@ -184,6 +196,14 @@ void loop()
     Serial.println(responseCode);
     Serial.print("Response body: ");
     Serial.println(responseBody);
+
+    if(responseCode == 200) {
+      Serial.println("Opening door and sleeping for 30 seconds");
+      digitalWrite(TRIGGER_PIN, HIGH);
+      // TODO: get this delay time from mulysa
+      sleep(30);
+      digitalWrite(TRIGGER_PIN, LOW);
+    }
 
 
     Serial.println("Ready for next call");

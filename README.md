@@ -5,6 +5,11 @@ the number is allowed or not.
 
 If the number is found to be allowed will pulse pin 23 for a while.
 
+TODO:
+Better readme
+Pin toggling for relay depending on the numbers access status (how much delay?)
+Document hardware and everything else
+
 # Notes
 
 ## ring "event"
