@@ -77,14 +77,6 @@ void setup()
   Serial.print("Modem initialized: ");
   Serial.println(modemInfo);
 
-  if (!modem.hasSSL())
-  {
-    Serial.println("ERROR: this model does not support SSL communications, going to sleep forever");
-    while (1)
-    {
-      delay(1000);
-    };
-  }
   // flush just in case
   Serial1.flush();
 
@@ -188,7 +180,6 @@ void loop()
     Serial.print(payload);
     client.connectionKeepAlive(); // this is required for some reason...
     client.post(resource, "application/json", payload);
-//    client.get(resource);
 
     int responseCode = client.responseStatusCode();
     String responseBody = client.responseBody();
@@ -197,14 +188,14 @@ void loop()
     Serial.print("Response body: ");
     Serial.println(responseBody);
 
-    if(responseCode == 200) {
+    if (responseCode == 200)
+    {
       Serial.println("Opening door and sleeping for 30 seconds");
       digitalWrite(TRIGGER_PIN, HIGH);
       // TODO: get this delay time from mulysa
       sleep(30);
       digitalWrite(TRIGGER_PIN, LOW);
     }
-
 
     Serial.println("Ready for next call");
   }
